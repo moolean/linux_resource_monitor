@@ -61,7 +61,7 @@ class ResourceMonitor:
     def draw_header(self, stdscr, height, width):
         """Draw the header with system information"""
         # Get system stats
-        cpu_percent = psutil.cpu_percent(interval=0)
+        cpu_percent = psutil.cpu_percent(interval=0.1)
         mem = psutil.virtual_memory()
         
         # System info line
@@ -152,7 +152,7 @@ class ResourceMonitor:
         except curses.error:
             pass  # Some terminals don't support cursor visibility changes
         stdscr.nodelay(1)   # Non-blocking input
-        stdscr.timeout(1000)  # 1 second timeout
+        stdscr.timeout(500)  # 500ms timeout for input, matching the refresh interval
         
         # Initialize CPU percent (first call returns 0)
         psutil.cpu_percent(interval=0.1)
@@ -194,8 +194,8 @@ class ResourceMonitor:
                     self.sort_by = 'cpu'
                 elif key == ord('m') or key == ord('M'):
                     self.sort_by = 'memory'
-            except:
-                pass
+            except curses.error:
+                pass  # No input available
             
             # Small delay to reduce CPU usage
             time.sleep(0.5)
