@@ -12,15 +12,53 @@ A `top`-like Linux resource monitoring tool for real-time system resource monito
 - 🔄 自动实时更新，类似 `top` 命令
 - 👥 支持切换到用户聚合模式，查看每个用户的总资源用量
 - ⌨️ 简单的键盘控制
+- ⚡ 提供高性能的 Shell 脚本版本，无需 Python 依赖
+- 📦 支持 Debian 包安装
 
 ## 安装 (Installation)
 
-### 依赖要求 (Requirements)
+### 方法 1: Debian 包安装 (Method 1: Debian Package Installation) - 推荐 (Recommended)
+
+```bash
+# 克隆仓库 (Clone the repository)
+git clone https://github.com/moolean/linux_resource_monitor.git
+cd linux_resource_monitor
+
+# 构建 Debian 包 (Build the Debian package)
+./build-deb.sh
+
+# 安装 Debian 包 (Install the Debian package)
+sudo dpkg -i linux-resource-monitor_1.0.0_all.deb
+```
+
+安装后可直接使用 (After installation, you can use):
+- `resource_monitor.sh` - Shell 脚本版本（高性能，无需 Python）
+- `resource_monitor.py` - Python 版本（需要 psutil 库）
+
+### 方法 2: 直接运行 Shell 脚本 (Method 2: Run Shell Script Directly) - 高性能 (High Performance)
+
+Shell 脚本版本使用原生 Linux 命令，性能更好，无需安装任何依赖。
+
+```bash
+# 克隆仓库 (Clone the repository)
+git clone https://github.com/moolean/linux_resource_monitor.git
+cd linux_resource_monitor
+
+# 赋予执行权限 (Make executable)
+chmod +x resource_monitor.sh
+
+# 运行 (Run)
+./resource_monitor.sh
+```
+
+### 方法 3: Python 版本 (Method 3: Python Version)
+
+#### 依赖要求 (Requirements)
 
 - Python 3.6+
 - psutil 库
 
-### 安装步骤 (Setup)
+#### 安装步骤 (Setup)
 
 ```bash
 # 克隆仓库 (Clone the repository)
@@ -36,7 +74,21 @@ chmod +x resource_monitor.py
 
 ## 使用方法 (Usage)
 
-### 启动监控器 (Start the monitor)
+### Shell 脚本版本 (Shell Script Version) - 推荐 (Recommended)
+
+Shell 脚本版本性能更好，适合在生产环境中使用。
+
+```bash
+./resource_monitor.sh
+```
+
+如果已安装 Debian 包 (If installed via Debian package):
+
+```bash
+resource_monitor.sh
+```
+
+### Python 版本 (Python Version)
 
 ```bash
 ./resource_monitor.py
@@ -46,6 +98,12 @@ chmod +x resource_monitor.py
 
 ```bash
 python3 resource_monitor.py
+```
+
+如果已安装 Debian 包 (If installed via Debian package):
+
+```bash
+resource_monitor.py
 ```
 
 ### 键盘控制 (Keyboard Controls)
@@ -98,10 +156,24 @@ root             98           35.2         8.3
 
 ## 技术实现 (Technical Details)
 
+### Shell 脚本版本 (Shell Script Version)
+- 使用原生 Linux 命令（`ps`, `top`, `free`, etc.）
+- 无需外部依赖，性能更好
+- 使用 ANSI 转义序列实现终端界面
+- 每 0.5 秒自动刷新数据
+
+### Python 版本 (Python Version)
 - 使用 `psutil` 库获取系统和进程信息
 - 使用 `curses` 库实现终端用户界面
 - 每 0.5 秒自动刷新数据
 - 支持动态终端窗口大小调整
+
+## 性能对比 (Performance Comparison)
+
+- **Shell 脚本版本**: 直接使用 Linux 命令，性能最佳，CPU 占用更低，适合生产环境
+- **Python 版本**: 功能更丰富，代码更易维护，但性能稍低
+
+推荐在生产环境使用 Shell 脚本版本以获得最佳性能。(Recommended to use Shell script version in production for best performance.)
 
 ## 许可证 (License)
 

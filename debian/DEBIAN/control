@@ -1,0 +1,21 @@
+Package: linux-resource-monitor
+Version: 1.0.0
+Section: admin
+Priority: optional
+Architecture: all
+Depends: bash (>= 4.0), coreutils, procps
+Maintainer: moolean <moolean@example.com>
+Description: A top-like Linux resource monitoring tool
+ Linux Resource Monitor is a system monitoring tool similar to 'top' that
+ provides real-time monitoring of system resources.
+ .
+ Features:
+  - Real-time CPU and memory monitoring
+  - Shows top 10 processes by resource usage
+  - Displays detailed information including user, PID, and command
+  - Automatic real-time updates similar to 'top' command
+  - Support for user aggregation mode
+  - Simple keyboard controls
+ .
+ The package includes both a high-performance shell script version and
+ a Python version with enhanced features.
