@@ -13,9 +13,10 @@ from datetime import datetime
 
 
 class ResourceMonitor:
-    def __init__(self):
+    def __init__(self, refresh_interval=3.0):
         self.mode = 'process'  # 'process' or 'user'
         self.sort_by = 'cpu'   # 'cpu' or 'memory'
+        self.refresh_interval = refresh_interval  # Configurable refresh interval in seconds
         
     def get_process_info(self):
         """Get information about all running processes"""
@@ -58,26 +59,34 @@ class ResourceMonitor:
         
         return user_list
     
-    def draw_header(self, stdscr, height, width):
-        """Draw the header with system information"""
-        # Get system stats
-        cpu_percent = psutil.cpu_percent(interval=0.1)
+    def get_system_stats(self):
+        """Collect all system statistics at once"""
+        cpu_percent = psutil.cpu_percent(interval=0)
         mem = psutil.virtual_memory()
-        
-        # System info line
         uptime = time.time() - psutil.boot_time()
         uptime_str = time.strftime("%H:%M:%S", time.gmtime(uptime))
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
+        return {
+            'cpu_percent': cpu_percent,
+            'mem_percent': mem.percent,
+            'mem_used_gb': mem.used/1024/1024/1024,
+            'mem_total_gb': mem.total/1024/1024/1024,
+            'uptime_str': uptime_str,
+            'current_time': current_time
+        }
+    
+    def draw_header(self, stdscr, height, width, system_stats):
+        """Draw the header with system information"""
         # Draw header
         try:
-            stdscr.addstr(0, 0, f"Linux Resource Monitor - {current_time}".ljust(width-1))
-            stdscr.addstr(1, 0, f"Uptime: {uptime_str} | CPU: {cpu_percent:5.1f}% | Memory: {mem.percent:5.1f}% ({mem.used/1024/1024/1024:.1f}GB/{mem.total/1024/1024/1024:.1f}GB)")
+            stdscr.addstr(0, 0, f"Linux Resource Monitor - {system_stats['current_time']}".ljust(width-1))
+            stdscr.addstr(1, 0, f"Uptime: {system_stats['uptime_str']} | CPU: {system_stats['cpu_percent']:5.1f}% | Memory: {system_stats['mem_percent']:5.1f}% ({system_stats['mem_used_gb']:.1f}GB/{system_stats['mem_total_gb']:.1f}GB)")
             stdscr.addstr(2, 0, "-" * (width-1))
             
             # Mode and controls
-            mode_text = f"Mode: {'PROCESS' if self.mode == 'process' else 'USER'} | Sort: {self.sort_by.upper()}"
-            controls = "[p]Process [u]User [c]CPU [m]Memory [q]Quit"
+            mode_text = f"Mode: {'PROCESS' if self.mode == 'process' else 'USER'} | Sort: {self.sort_by.upper()} | Refresh: {self.refresh_interval}s"
+            controls = "[p]Process [c]CPU [q]Quit"
             stdscr.addstr(3, 0, mode_text)
             stdscr.addstr(4, 0, controls)
             stdscr.addstr(5, 0, "-" * (width-1))
@@ -152,62 +161,85 @@ class ResourceMonitor:
         except curses.error:
             pass  # Some terminals don't support cursor visibility changes
         stdscr.nodelay(1)   # Non-blocking input
-        stdscr.timeout(500)  # 500ms timeout for input, matching the refresh interval
+        stdscr.timeout(100)  # 100ms timeout for responsive input
         
         # Initialize CPU percent (first call returns 0)
         psutil.cpu_percent(interval=0.1)
         
+        last_refresh_time = 0
+        
         while True:
-            # Get terminal size
-            height, width = stdscr.getmaxyx()
+            current_time = time.time()
             
-            # Clear screen
-            stdscr.clear()
+            # Check if it's time to refresh the display
+            if current_time - last_refresh_time >= self.refresh_interval:
+                # Collect all data at once for instant update
+                system_stats = self.get_system_stats()
+                processes = self.get_process_info()
+                
+                # Get terminal size
+                height, width = stdscr.getmaxyx()
+                
+                # Clear screen
+                stdscr.clear()
+                
+                # Draw header
+                self.draw_header(stdscr, height, width, system_stats)
+                
+                # Draw appropriate view
+                start_row = 6
+                if self.mode == 'process':
+                    self.draw_process_view(stdscr, processes, start_row, height, width)
+                else:  # user mode
+                    user_stats = self.get_user_aggregated_info(processes)
+                    self.draw_user_view(stdscr, user_stats, start_row, height, width)
+                
+                # Refresh screen
+                stdscr.refresh()
+                
+                last_refresh_time = current_time
             
-            # Get process information
-            processes = self.get_process_info()
-            
-            # Draw header
-            self.draw_header(stdscr, height, width)
-            
-            # Draw appropriate view
-            start_row = 6
-            if self.mode == 'process':
-                self.draw_process_view(stdscr, processes, start_row, height, width)
-            else:  # user mode
-                user_stats = self.get_user_aggregated_info(processes)
-                self.draw_user_view(stdscr, user_stats, start_row, height, width)
-            
-            # Refresh screen
-            stdscr.refresh()
-            
-            # Handle input
+            # Handle input (non-blocking, responsive)
             try:
                 key = stdscr.getch()
                 if key == ord('q') or key == ord('Q'):
                     break
                 elif key == ord('p') or key == ord('P'):
-                    self.mode = 'process'
-                elif key == ord('u') or key == ord('U'):
-                    self.mode = 'user'
+                    # Toggle between process and user mode
+                    self.mode = 'user' if self.mode == 'process' else 'process'
+                    last_refresh_time = 0  # Force immediate refresh
                 elif key == ord('c') or key == ord('C'):
-                    self.sort_by = 'cpu'
-                elif key == ord('m') or key == ord('M'):
-                    self.sort_by = 'memory'
+                    # Toggle between cpu and memory sort
+                    self.sort_by = 'memory' if self.sort_by == 'cpu' else 'cpu'
+                    last_refresh_time = 0  # Force immediate refresh
             except curses.error:
                 pass  # No input available
             
-            # Small delay to reduce CPU usage
-            time.sleep(0.5)
+            # Small sleep to reduce CPU usage
+            time.sleep(0.05)
 
 
 def main():
     """Entry point for the resource monitor"""
-    monitor = ResourceMonitor()
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='Linux Resource Monitor - A top-like system monitoring tool')
+    parser.add_argument('-r', '--refresh', type=float, default=3.0, 
+                        help='Refresh interval in seconds (default: 3.0)')
+    args = parser.parse_args()
+    
+    # Validate refresh interval
+    if args.refresh < 0.5:
+        print("Error: Refresh interval must be at least 0.5 seconds")
+        return 1
+    
+    monitor = ResourceMonitor(refresh_interval=args.refresh)
     try:
         curses.wrapper(monitor.run)
     except KeyboardInterrupt:
         print("\nExiting...")
+    
+    return 0
 
 
 if __name__ == "__main__":
