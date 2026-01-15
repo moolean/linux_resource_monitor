@@ -61,7 +61,7 @@ class ResourceMonitor:
     
     def get_system_stats(self):
         """Collect all system statistics at once"""
-        cpu_percent = psutil.cpu_percent(interval=0)
+        cpu_percent = psutil.cpu_percent(interval=0.1)
         mem = psutil.virtual_memory()
         uptime = time.time() - psutil.boot_time()
         uptime_str = time.strftime("%H:%M:%S", time.gmtime(uptime))
@@ -216,7 +216,7 @@ class ResourceMonitor:
                 pass  # No input available
             
             # Small sleep to reduce CPU usage
-            time.sleep(0.05)
+            time.sleep(0.1)
 
 
 def main():

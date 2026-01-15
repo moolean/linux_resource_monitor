@@ -36,8 +36,9 @@ while getopts "r:h" opt; do
                 echo "Error: Refresh interval must be a number" >&2
                 exit 1
             fi
-            # Check minimum value
-            if (( $(echo "$REFRESH_INTERVAL < 0.5" | bc -l) )); then
+            # Check minimum value using awk (no bc dependency)
+            is_too_small=$(awk -v val="$REFRESH_INTERVAL" 'BEGIN { print (val < 0.5) ? 1 : 0 }')
+            if [ "$is_too_small" -eq 1 ]; then
                 echo "Error: Refresh interval must be at least 0.5 seconds" >&2
                 exit 1
             fi
