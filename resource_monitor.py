@@ -8,6 +8,8 @@ Supports switching between process view and user aggregation view
 import psutil
 import curses
 import time
+import sys
+import argparse
 from collections import defaultdict
 from datetime import datetime
 
@@ -221,8 +223,6 @@ class ResourceMonitor:
 
 def main():
     """Entry point for the resource monitor"""
-    import argparse
-    
     parser = argparse.ArgumentParser(description='Linux Resource Monitor - A top-like system monitoring tool')
     parser.add_argument('-r', '--refresh', type=float, default=3.0, 
                         help='Refresh interval in seconds (default: 3.0)')
@@ -243,5 +243,4 @@ def main():
 
 
 if __name__ == "__main__":
-    import sys
     sys.exit(main())
