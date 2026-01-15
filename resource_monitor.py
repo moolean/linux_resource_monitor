@@ -208,11 +208,17 @@ class ResourceMonitor:
                     break
                 elif key == ord('p') or key == ord('P'):
                     # Toggle between process and user mode
-                    self.mode = 'user' if self.mode == 'process' else 'process'
+                    if self.mode == 'process':
+                        self.mode = 'user'
+                    else:
+                        self.mode = 'process'
                     last_refresh_time = 0  # Force immediate refresh
                 elif key == ord('c') or key == ord('C'):
                     # Toggle between cpu and memory sort
-                    self.sort_by = 'memory' if self.sort_by == 'cpu' else 'cpu'
+                    if self.sort_by == 'cpu':
+                        self.sort_by = 'memory'
+                    else:
+                        self.sort_by = 'cpu'
                     last_refresh_time = 0  # Force immediate refresh
             except curses.error:
                 pass  # No input available
@@ -230,7 +236,7 @@ def main():
     
     # Validate refresh interval
     if args.refresh < 0.5:
-        print("Error: Refresh interval must be at least 0.5 seconds")
+        print("Error: Refresh interval must be at least 0.5 seconds", file=sys.stderr)
         return 1
     
     monitor = ResourceMonitor(refresh_interval=args.refresh)
