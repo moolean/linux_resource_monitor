@@ -9,6 +9,20 @@ BUILD_DIR="$SCRIPT_DIR/debian"
 echo "Building Linux Resource Monitor Debian package..."
 echo "=================================================="
 
+# Check if source files exist
+if [ ! -f "$SCRIPT_DIR/resource_monitor.sh" ]; then
+    echo "Error: resource_monitor.sh not found"
+    exit 1
+fi
+
+if [ ! -f "$SCRIPT_DIR/resource_monitor.py" ]; then
+    echo "Error: resource_monitor.py not found"
+    exit 1
+fi
+
+# Ensure destination directory exists
+mkdir -p "$BUILD_DIR/usr/bin"
+
 # Copy executables to the package bin directory
 echo "Copying executables..."
 cp "$SCRIPT_DIR/resource_monitor.sh" "$BUILD_DIR/usr/bin/"

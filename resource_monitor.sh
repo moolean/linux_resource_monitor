@@ -8,7 +8,7 @@ set -e
 # Configuration
 REFRESH_INTERVAL=0.5
 MODE="process"  # process or user
-SORT_BY="cpu"   # cpu or memory
+SORT_BY="cpu"   # cpu or mem
 
 # Terminal colors (ANSI codes)
 BOLD='\033[1m'
@@ -55,6 +55,23 @@ display_header() {
     printf '%*s\n' "$width" | tr ' ' '-'
 }
 
+# Function to parse and format process line
+format_process_line() {
+    local line="$1"
+    local user=$(echo $line | awk '{print $1}')
+    local pid=$(echo $line | awk '{print $2}')
+    local cpu=$(echo $line | awk '{print $3}')
+    local mem=$(echo $line | awk '{print $4}')
+    local cmd=$(echo $line | awk '{for(i=11;i<=NF;i++) printf "%s ", $i}')
+    
+    # Truncate command if too long
+    if [ ${#cmd} -gt 48 ]; then
+        cmd="${cmd:0:48}"
+    fi
+    
+    printf "%-8s %-12s %-8s %-8s %-50s\n" "$pid" "$user" "$cpu" "$mem" "$cmd"
+}
+
 # Function to display process view
 display_process_view() {
     local width=$(tput cols)
@@ -66,35 +83,26 @@ display_process_view() {
     # Sort by CPU or Memory
     if [ "$SORT_BY" = "cpu" ]; then
         ps aux --sort=-%cpu | head -n 11 | tail -n 10 | while read line; do
-            local user=$(echo $line | awk '{print $1}')
-            local pid=$(echo $line | awk '{print $2}')
-            local cpu=$(echo $line | awk '{print $3}')
-            local mem=$(echo $line | awk '{print $4}')
-            local cmd=$(echo $line | awk '{for(i=11;i<=NF;i++) printf "%s ", $i}')
-            
-            # Truncate command if too long
-            if [ ${#cmd} -gt 48 ]; then
-                cmd="${cmd:0:48}"
-            fi
-            
-            printf "%-8s %-12s %-8s %-8s %-50s\n" "$pid" "$user" "$cpu" "$mem" "$cmd"
+            format_process_line "$line"
         done
     else
         ps aux --sort=-%mem | head -n 11 | tail -n 10 | while read line; do
-            local user=$(echo $line | awk '{print $1}')
-            local pid=$(echo $line | awk '{print $2}')
-            local cpu=$(echo $line | awk '{print $3}')
-            local mem=$(echo $line | awk '{print $4}')
-            local cmd=$(echo $line | awk '{for(i=11;i<=NF;i++) printf "%s ", $i}')
-            
-            # Truncate command if too long
-            if [ ${#cmd} -gt 48 ]; then
-                cmd="${cmd:0:48}"
-            fi
-            
-            printf "%-8s %-12s %-8s %-8s %-50s\n" "$pid" "$user" "$cpu" "$mem" "$cmd"
+            format_process_line "$line"
         done
     fi
+}
+
+# Function to aggregate user stats
+aggregate_user_stats() {
+    ps aux | tail -n +2 | awk '{
+        user[$1]++;
+        cpu[$1]+=$3;
+        mem[$1]+=$4;
+    } END {
+        for (u in user) {
+            printf "%s %d %.1f %.1f\n", u, user[u], cpu[u], mem[u];
+        }
+    }'
 }
 
 # Function to display user aggregated view
@@ -105,29 +113,13 @@ display_user_view() {
     printf "${BOLD}%-16s %-12s %-12s %-12s${RESET}\n" "USER" "PROCESSES" "TOTAL CPU%" "TOTAL MEM%"
     printf '%*s\n' "$width" | tr ' ' '-'
     
-    # Aggregate by user
+    # Aggregate by user and sort
     if [ "$SORT_BY" = "cpu" ]; then
-        ps aux | tail -n +2 | awk '{
-            user[$1]++;
-            cpu[$1]+=$3;
-            mem[$1]+=$4;
-        } END {
-            for (u in user) {
-                printf "%s %d %.1f %.1f\n", u, user[u], cpu[u], mem[u];
-            }
-        }' | sort -k3 -rn | head -n 15 | while read user procs cpu mem; do
+        aggregate_user_stats | sort -k3 -rn | head -n 15 | while read user procs cpu mem; do
             printf "%-16s %-12s %-12s %-12s\n" "$user" "$procs" "$cpu" "$mem"
         done
     else
-        ps aux | tail -n +2 | awk '{
-            user[$1]++;
-            cpu[$1]+=$3;
-            mem[$1]+=$4;
-        } END {
-            for (u in user) {
-                printf "%s %d %.1f %.1f\n", u, user[u], cpu[u], mem[u];
-            }
-        }' | sort -k4 -rn | head -n 15 | while read user procs cpu mem; do
+        aggregate_user_stats | sort -k4 -rn | head -n 15 | while read user procs cpu mem; do
             printf "%-16s %-12s %-12s %-12s\n" "$user" "$procs" "$cpu" "$mem"
         done
     fi
@@ -135,8 +127,8 @@ display_user_view() {
 
 # Function to handle keyboard input
 handle_input() {
-    # Use timeout to avoid blocking
-    read -t 0.1 -n 1 key 2>/dev/null
+    # Use shorter timeout for more responsive input
+    read -t 0.01 -n 1 key 2>/dev/null
     
     case "$key" in
         q|Q)
@@ -152,7 +144,7 @@ handle_input() {
             SORT_BY="cpu"
             ;;
         m|M)
-            SORT_BY="memory"
+            SORT_BY="mem"
             ;;
     esac
     return 0
