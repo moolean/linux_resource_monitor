@@ -71,7 +71,7 @@ class ResourceMonitor:
         
         # Draw header
         try:
-            stdscr.addstr(0, 0, f"Linux Resource Monitor - {current_time}".ljust(width-1), curses.A_REVERSE)
+            stdscr.addstr(0, 0, f"Linux Resource Monitor - {current_time}".ljust(width-1))
             stdscr.addstr(1, 0, f"Uptime: {uptime_str} | CPU: {cpu_percent:5.1f}% | Memory: {mem.percent:5.1f}% ({mem.used/1024/1024/1024:.1f}GB/{mem.total/1024/1024/1024:.1f}GB)")
             stdscr.addstr(2, 0, "-" * (width-1))
             

@@ -39,3 +39,8 @@ Thumbs.db
 # Temporary files
 /tmp/
 *.tmp
+
+# Debian packages
+*.deb
+debian/usr/bin/
+debian/usr/share/doc/linux-resource-monitor/README.md
