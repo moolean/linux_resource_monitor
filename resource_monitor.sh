@@ -5,10 +5,55 @@
 
 set -e
 
-# Configuration
-REFRESH_INTERVAL=0.5
+# Configuration - Default refresh interval
+REFRESH_INTERVAL=3.0
 MODE="process"  # process or user
 SORT_BY="cpu"   # cpu or mem
+
+# Parse command line arguments
+show_help() {
+    cat << EOF
+Linux Resource Monitor - Shell Script Version
+
+Usage: $0 [OPTIONS]
+
+Options:
+    -r SECONDS    Set refresh interval in seconds (default: 3.0)
+    -h            Show this help message
+
+Examples:
+    $0              # Use default 3 second refresh
+    $0 -r 5         # Use 5 second refresh interval
+EOF
+}
+
+while getopts "r:h" opt; do
+    case $opt in
+        r)
+            REFRESH_INTERVAL="$OPTARG"
+            # Validate it's a number
+            if ! [[ "$REFRESH_INTERVAL" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+                echo "Error: Refresh interval must be a number" >&2
+                exit 1
+            fi
+            # Check minimum value using awk (no bc dependency)
+            is_too_small=$(awk -v val="$REFRESH_INTERVAL" 'BEGIN { print (val < 0.5) ? 1 : 0 }')
+            if [ "$is_too_small" -eq 1 ]; then
+                echo "Error: Refresh interval must be at least 0.5 seconds" >&2
+                exit 1
+            fi
+            ;;
+        h)
+            show_help
+            exit 0
+            ;;
+        \?)
+            echo "Invalid option: -$OPTARG" >&2
+            show_help >&2
+            exit 1
+            ;;
+    esac
+done
 
 # Terminal colors (ANSI codes)
 BOLD='\033[1m'
@@ -47,11 +92,11 @@ display_header() {
     printf '%*s\n' "$width" | tr ' ' '-'
     
     if [ "$MODE" = "process" ]; then
-        echo "Mode: PROCESS | Sort: $(echo $SORT_BY | tr '[:lower:]' '[:upper:]')"
+        echo "Mode: PROCESS | Sort: $(echo $SORT_BY | tr '[:lower:]' '[:upper:]') | Refresh: ${REFRESH_INTERVAL}s"
     else
-        echo "Mode: USER | Sort: $(echo $SORT_BY | tr '[:lower:]' '[:upper:]')"
+        echo "Mode: USER | Sort: $(echo $SORT_BY | tr '[:lower:]' '[:upper:]') | Refresh: ${REFRESH_INTERVAL}s"
     fi
-    echo "[p]Process [u]User [c]CPU [m]Memory [q]Quit"
+    echo "[p]Process [c]CPU [q]Quit"
     printf '%*s\n' "$width" | tr ' ' '-'
 }
 
@@ -135,16 +180,20 @@ handle_input() {
             return 1
             ;;
         p|P)
-            MODE="process"
-            ;;
-        u|U)
-            MODE="user"
+            # Toggle between process and user mode
+            if [ "$MODE" = "process" ]; then
+                MODE="user"
+            else
+                MODE="process"
+            fi
             ;;
         c|C)
-            SORT_BY="cpu"
-            ;;
-        m|M)
-            SORT_BY="mem"
+            # Toggle between cpu and mem sort
+            if [ "$SORT_BY" = "cpu" ]; then
+                SORT_BY="mem"
+            else
+                SORT_BY="cpu"
+            fi
             ;;
     esac
     return 0

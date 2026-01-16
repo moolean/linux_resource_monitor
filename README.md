@@ -82,10 +82,17 @@ Shell 脚本版本性能更好，适合在生产环境中使用。
 ./resource_monitor.sh
 ```
 
+使用自定义刷新间隔 (Use custom refresh interval):
+
+```bash
+./resource_monitor.sh -r 5  # 5秒刷新一次 (Refresh every 5 seconds)
+```
+
 如果已安装 Debian 包 (If installed via Debian package):
 
 ```bash
 resource_monitor.sh
+resource_monitor.sh -r 3  # 3秒刷新一次 (Refresh every 3 seconds)
 ```
 
 ### Python 版本 (Python Version)
@@ -94,27 +101,36 @@ resource_monitor.sh
 ./resource_monitor.py
 ```
 
+使用自定义刷新间隔 (Use custom refresh interval):
+
+```bash
+./resource_monitor.py -r 5  # 5秒刷新一次 (Refresh every 5 seconds)
+```
+
 或者 (or):
 
 ```bash
-python3 resource_monitor.py
+python3 resource_monitor.py --refresh 3  # 3秒刷新一次 (Refresh every 3 seconds)
 ```
 
 如果已安装 Debian 包 (If installed via Debian package):
 
 ```bash
 resource_monitor.py
+resource_monitor.py -r 3  # 3秒刷新一次 (Refresh every 3 seconds)
 ```
 
 ### 键盘控制 (Keyboard Controls)
 
 | 按键 (Key) | 功能 (Function) |
 |-----------|----------------|
-| `p` | 切换到进程监控模式 (Switch to Process monitoring mode) |
-| `u` | 切换到用户聚合模式 (Switch to User aggregation mode) |
-| `c` | 按 CPU 使用率排序 (Sort by CPU usage) |
-| `m` | 按内存使用率排序 (Sort by Memory usage) |
+| `p` | 切换进程/用户模式 (Toggle Process/User monitoring mode) |
+| `c` | 切换 CPU/内存排序 (Toggle CPU/Memory sorting) |
 | `q` | 退出程序 (Quit the program) |
+
+**注意**: 按键 `p` 和 `c` 都是切换键，按一次切换到另一个模式，再按一次切换回来。
+
+**Note**: Keys `p` and `c` are toggle keys - press once to switch to the other mode, press again to switch back.
 
 ## 显示界面 (Display Interface)
 
@@ -126,8 +142,8 @@ resource_monitor.py
 Linux Resource Monitor - 2026-01-13 15:43:27
 Uptime: 02:15:30 | CPU: 15.3% | Memory: 45.2% (3.6GB/8.0GB)
 ----------------------------------------------------------------
-Mode: PROCESS | Sort: CPU
-[p]Process [u]User [c]CPU [m]Memory [q]Quit
+Mode: PROCESS | Sort: CPU | Refresh: 3.0s
+[p]Process [c]CPU [q]Quit
 ----------------------------------------------------------------
 PID      USER         CPU%     MEM%     COMMAND
 ----------------------------------------------------------------
@@ -144,8 +160,8 @@ PID      USER         CPU%     MEM%     COMMAND
 Linux Resource Monitor - 2026-01-13 15:43:27
 Uptime: 02:15:30 | CPU: 15.3% | Memory: 45.2% (3.6GB/8.0GB)
 ----------------------------------------------------------------
-Mode: USER | Sort: CPU
-[p]Process [u]User [c]CPU [m]Memory [q]Quit
+Mode: USER | Sort: CPU | Refresh: 3.0s
+[p]Process [c]CPU [q]Quit
 ----------------------------------------------------------------
 USER             PROCESSES    TOTAL CPU%   TOTAL MEM%
 ----------------------------------------------------------------
@@ -160,12 +176,12 @@ root             98           35.2         8.3
 - 使用原生 Linux 命令（`ps`, `top`, `free`, etc.）
 - 无需外部依赖，性能更好
 - 使用 ANSI 转义序列实现终端界面
-- 每 0.5 秒自动刷新数据
+- 默认每 3 秒自动刷新数据，可通过 `-r` 参数自定义
 
 ### Python 版本 (Python Version)
 - 使用 `psutil` 库获取系统和进程信息
 - 使用 `curses` 库实现终端用户界面
-- 每 0.5 秒自动刷新数据
+- 默认每 3 秒自动刷新数据，可通过 `-r` 参数自定义
 - 支持动态终端窗口大小调整
 
 ## 性能对比 (Performance Comparison)
